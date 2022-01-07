@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "2.0.2.0",
+    "contentVersion": "3.0.0.0",
     "parameters": {
         "vmName": {
             "type": "string"
@@ -15,6 +15,9 @@
             "type": "string"
         },
         "createdBy": {
+            "type": "string"
+        },
+        "courseDate": {
             "type": "string"
         },
         "resourceGroupCleanup": {
@@ -34,6 +37,7 @@
                 "Displayname": "Public IP Address",
                 "Dept": "[resourceGroup().tags['Dept']]",
                 "Created By": "[parameters('createdBy')]",
+                "Course Date": "[concat('WC-', parameters('courseDate'))]",
                 "Cleanup": "[parameters('resourceGroupCleanup')]"
             },
             "copy": {

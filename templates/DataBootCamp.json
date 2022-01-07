@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "2.0.2.0",
+    "contentVersion": "3.0.0.0",
     "parameters": {
         "vmName": {
             "type": "string"
@@ -15,6 +15,9 @@
             "type": "string"
         },
         "createdBy": {
+            "type": "string"
+        },
+        "courseDate": {
             "type": "string"
         },
         "idleVm": {
@@ -34,6 +37,9 @@
         },
         "operatingSystem": {
             "type": "string"
+        },
+        "labConfig": {
+            "type": "string"
         },        
         "licenseType": {
             "type": "string"
@@ -47,6 +53,15 @@
         "patchMode": {
             "type": "string"
         },
+        "securityType": {
+            "type": "string"
+        },
+        "secureBoot": {
+            "type": "bool"
+        },
+        "vTPM": {
+            "type": "bool"
+        },
         "adminUsername": {
             "type": "string"
         },
@@ -55,21 +70,35 @@
         },
         "localUsername": {
             "type": "string"
-        },
-        "localUserPassword": {
-            "type": "securestring"
         }
     },
     "variables": {
         "vmNamePrefix": "[toUpper(concat(parameters('vmName'), parameters('trainerInitials')))]",
         "galleryImageName": "SharedImageGallery",
         "windowsLicense": "Windows_Client",
+        "vaultResourceGroup": "BalticTrainerOMS",
+        "vaultName": "DeploymentVM",
+        "localUserPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "[resourceId(subscription().subscriptionId, variables('vaultResourceGroup'), 'Microsoft.KeyVault/vaults', variables('vaultName'))]"
+                },
+                "secretName": "[parameters('localUsername')]"
+            }
+        },
         "operatingSystemValues": {
             "DataBootCamp": {
                 "galleryImageDefinitionName": "BA-DATABOOT"
             }
         },
-        "_artifactsLocation": "https://raw.githubusercontent.com/balticapprenticeships/azuretemplates",
+        "trustedLaunch": {
+            "securityType": "[parameters('securityType')]",
+            "uefiSettings": {
+                "secureBootEnabled": "[parameters('secureBoot')]",
+                "vTpmEnabled": "[parameters('vTPM')]"
+            }
+        },
+        "_artifactsLocation": "https://raw.githubusercontent.com/balticapprenticeships/azuretemplatesv3",
         "_extensionRepo": "main/extensions",
         "dscArchiveFolder": "DSC",
         "dscArchiveFileName": "xBaLabWindowsCfg.zip"
@@ -84,6 +113,7 @@
                 "Displayname": "Virtual Machine",
                 "Dept": "[resourceGroup().tags['Dept']]",
                 "Created By": "[parameters('createdBy')]",
+                "Course Date": "[concat('WC-', parameters('courseDate'))]",
                 "Schedule": "[if(equals(parameters('schedule'), 'Yes'), 'StartDaily', 'NoSchedule')]",
                 "IdleShutdown": "[parameters('idleVm')]",
                 "Cleanup": "[parameters('resourceGroupCleanup')]"
@@ -131,6 +161,7 @@
                         }
                     }
                 },
+                "securityProfile": "[if(equals(parameters('securityType'), 'TrustedLaunch'), variables('trustedLaunch'), json('null'))]",
                 "licenseType": "[if(equals(parameters('licenseType'), 'AzureHybrid'), variables('windowsLicense'), json('null'))]",
                 "diagnosticsProfile": {
                     "bootDiagnostics": {
@@ -141,13 +172,14 @@
             "resources": [
                 {
                     "type": "extensions",
-                    "apiVersion": "2016-03-30",
+                    "apiVersion": "2018-06-01",
                     "name": "Microsoft.Powershell.DSC",
                     "location": "[parameters('location')]",
                     "tags": {
                         "Displayname": "DSC",
                         "Dept": "[resourceGroup().tags['Dept']]",
                         "Created By": "[parameters('createdBy')]",
+                        "Course Date": "[concat('WC-', parameters('courseDate'))]",
                         "Cleanup": "[parameters('resourceGroupCleanup')]"
                     },
                     "dependsOn": [
@@ -156,7 +188,7 @@
                     "properties": {
                         "publisher": "Microsoft.Powershell",
                         "type": "DSC",
-                        "typeHandlerVersion": "2.19",
+                        "typeHandlerVersion": "2.77",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "wmfVersion": "latest",
@@ -170,7 +202,7 @@
                             "configurationArguments": {
                                 "Credential": {
                                     "UserName": "[parameters('localUsername')]",
-                                    "Password": "[parameters('localUserPassword')]"
+                                    "Password": "[variables('localUserPassword')]"
                                 }
                             }
                         }

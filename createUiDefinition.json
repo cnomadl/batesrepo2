@@ -2,7 +2,7 @@
     "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
     "handler": "Microsoft.Azure.CreateUIDef",
     "version": "0.1.2-preview",
-    "currentVersion": "2.0.2.0",
+    "currentVersion": "3.0.0.0",
     "parameters": {
         "config": {
             "isWizard": true,
@@ -92,6 +92,48 @@
                                 "visible": true
                             },
                             {
+                                "name": "osPlatform",
+                                "type": "Microsoft.Common.DropDown",
+                                "label": "Windows or Linux based VM",
+                                "placeholder": "Select your platform",
+                                "constraints": {
+                                    "allowedValues": [
+                                        {
+                                            "label": "Windows",
+                                            "value": "Windows"                                            
+                                        },
+                                        {
+                                            "label": "Linux",
+                                            "value": "Linux"                                            
+                                        }
+                                    ],
+                                    "required": true
+                                },
+                                "visible": true
+        
+                            },
+                            {
+                                "name": "trustedLaunch",
+                                "type": "Microsoft.Common.DropDown",
+                                "label": "Security",
+                                "defaultValue": "TrustedLaunch",
+                                "constraints": {
+                                    "allowedValues": [
+                                        {
+                                            "label": "Standard",
+                                            "value": "Standard"
+                                        },
+                                        {
+                                            "label": "Trusted Launch",
+                                            "description": "Protects against persistent and advanced attacks on Gen 2 virtual machines.",
+                                            "value": "TrustedLaunch"
+                                        }
+                                    ]
+                                },
+                                "toolTip": "Choose a type of security that matches your needs: Standard includes basic protections at no additional cost. Trusted launch virtual machines provide additional security features on Gen 2 virtual machines to protect against persistent and advanced attacks.",
+                                "visible": "[equals(steps('vmConfig').vmInstance.osPlatform, 'Linux')]"
+                            },
+                            {
                                 "name": "osDiskType",
                                 "type": "Microsoft.Common.DropDown",
                                 "label": "OS Disk type",
@@ -121,28 +163,7 @@
                         "options": {
                             "text": "Here you can configure the virtual machine environment such as a Windows or Linux platform, and the operating system."
                         }
-                    },
-                    {
-                        "name": "osPlatform",
-                        "type": "Microsoft.Common.DropDown",
-                        "label": "Platform",
-                        "placeholder": "Select your platform",
-                        "constraints": {
-                            "allowedValues": [
-                                {
-                                    "label": "Windows",
-                                    "value": "Windows"                                            
-                                },
-                                {
-                                    "label": "Linux",
-                                    "value": "Linux"                                            
-                                }
-                            ],
-                            "required": true
-                        },
-                        "visible": true
-
-                    },
+                    },                    
                     {
                         "name": "imageCreation",
                         "type": "Microsoft.Common.DropDown",
@@ -166,7 +187,7 @@
                             "required": true
                         },
                         "toolTip": "Set this option to Yes ONLY if you wish to create a NEW virtual machine image for a course",
-                        "visible": "[equals(steps('osConfig').osPlatform, 'Windows')]"
+                        "visible": "[equals(steps('vmConfig').vmInstance.osPlatform, 'Windows')]"
                     },
                     {
                         "name": "imageBaseOS",
@@ -192,8 +213,8 @@
                     {
                         "name": "operatingSystem",
                         "type": "Microsoft.Common.DropDown",
-                        "label": "Operating System",
-                        "placeholder": "Select your image.",
+                        "label": "Select a course or image",
+                        "placeholder": "Select a course or image.",
                         "constraints": {
                             "allowedValues": [
                                 {
@@ -201,23 +222,31 @@
                                     "value": "WindowsClient"
                                 },
                                 {
-                                    "label": "Networking and Architecture",
-                                    "value": "WindowsServer-NA"
+                                    "label": "MTA Mobility and Devices",
+                                    "value": "WindowsServer-MD"
                                 },
                                 {
-                                    "label": "Security+",
-                                    "value": "WindowsServer-SP"
+                                    "label": "MTA Server Administration",
+                                    "value": "WindowsServer-SF"
+                                },
+                                {
+                                    "label": "C&G Networking and Architecture",
+                                    "value": "WindowsServer-NA"
                                 },
                                 {
                                     "label": "Cisco ITE",
                                     "value": "WindowsServer-CITE"
                                 },
                                 {
+                                    "label": "CompTIA Security+",
+                                    "value": "WindowsServer-SP"
+                                },
+                                {
                                     "label": "L2 Diploma",
                                     "value": "DiplomaVm"
                                 },
                                 {
-                                    "label": "Remote Testing",
+                                    "label": "MTA/C&G Exams",
                                     "value": "WindowsTesting"
                                 },                                
                                 {
@@ -225,14 +254,14 @@
                                     "value": "RawDigital"
                                 },
                                 {
-                                    "label": "Data Bootcamp",
+                                    "label": "Data Boot Camp",
                                     "value": "DataBootCamp"
                                 }
                             ],
                             "required": true
                         },
                         "toolTip": "Here you can select the operating system for your virtual machine(s).",
-						"visible": "[and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No'))]"
+						"visible": "[and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No'))]"
                     },
                     {
                         "name": "linuxOS",
@@ -246,6 +275,10 @@
                                     "value": "UbuntuServer"
                                 },
                                 {
+                                    "label": "Ubuntu Server 20.04",
+                                    "value": "UbuntuServer2004"
+                                },
+                                {
                                     "label": "Debian",
                                     "value": "Debian"
                                 },
@@ -257,7 +290,7 @@
                             "required": true
                         },
                         "toolTip": "Here you can select the Linux Distribution you require.",
-                        "visible": "[equals(steps('osConfig').osPlatform, 'Linux')]"
+                        "visible": "[equals(steps('vmConfig').vmInstance.osPlatform, 'Linux')]"
                     },
                     {
                         "name": "imageVersion",
@@ -271,18 +304,18 @@
                                     "value": "latest"
                                 },
                                 {
-                                    "label": "August",
-                                    "value": "1.08.21"
+                                    "label": "November",
+                                    "value": "1.11.21"
                                 },
                                 {
-                                    "label": "July",
-                                    "value": "1.07.21"
+                                    "label": "October",
+                                    "value": "1.10.21"
                                 }
                             ],
                             "required": true
                         },
                         "toolTip": "Here you can choose from different OS image version however, 'Latest' is recommended.",
-                        "visible": "[or(and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'Yes')), and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No')))]"
+                        "visible": "[or(and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'Yes')), and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No')))]"
                     },
                     {
                         "name": "enableHotpatching",
@@ -320,7 +353,7 @@
                             "required": true
                         },
                         "toolTip": "Select the patch mode for the OS platform",
-                        "visible": "[or(and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'Yes')), and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No')), equals(steps('osConfig').osPlatform, 'Linux'))]"
+                        "visible": "[or(and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'Yes')), and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No')), equals(steps('vmConfig').vmInstance.osPlatform, 'Linux'))]"
                     },
                     {
                         "name": "licenseType",
@@ -341,7 +374,7 @@
                             "required": true
                         },
                         "toolTip": "Select Azure Hybrid to use an existing Windows Server license as part of the Azure Hybrid benefit",
-                        "visible": "[or(and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'Yes')), and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No')), equals(steps('osConfig').osPlatform, 'Linux'))]"
+                        "visible": "[or(and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'Yes')), and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No')), equals(steps('vmConfig').vmInstance.osPlatform, 'Linux'))]"
                     }
                 ]
             },
@@ -405,7 +438,7 @@
                                     "validationMessage": "The Subnet name must be between 3 and 10 characters long and contain only letters, numbers and hyphens.",
                                     "required": true
                                 },
-                                "toolTip": "Here you can choose the subet name that your VMs will be assigned to"
+                                "toolTip": "Here you can choose the subnet name that your VMs will be assigned to"
                                 
                             }
                         ]
@@ -436,7 +469,7 @@
                                 "placeholder": "e.g. ITAdmin",
                                 "constraints": {
                                     "regex": "^[a-z0-9A-Z]{3,15}$",
-                                    "validationMessage": "Only alphnumeric characters are allowed, adn the username must be 3-15 characters long.",
+                                    "validationMessage": "Only alphanumeric characters are allowed, adn the username must be 3-15 characters long.",
                                     "required": true
                                 },
                                 "toolTip": "Here you can choose the Administrator username for you virtual machine(s)."
@@ -500,7 +533,7 @@
                                 "type": "Microsoft.Common.DropDown",
                                 "label": "Standard User Username",
                                 "defaultValue": "",
-                                "placeholder": "Select a username",
+                                "placeholder": "Select a username.",
                                 "constraints": {
                                     "allowedValues": [
                                         {
@@ -536,7 +569,7 @@
                                 "visible": false
                             }
                         ],
-                        "visible": "[and(equals(steps('osConfig').osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No'))]"
+                        "visible": "[and(equals(steps('vmConfig').vmInstance.osPlatform, 'Windows'), equals(steps('osConfig').imageCreation, 'No'))]"
                     }
                 ]
             },
@@ -579,6 +612,18 @@
                                     "validationMessage": "This must contain a maximum of 2 uppercase letters, the firstname initial and the surname initial."
                                 },
                                 "toolTip": "Here you can enter your first name and surname"
+                            },
+                            {
+                                "name": "courseDate",
+                                "type": "Microsoft.Common.TextBox",
+                                "label": "Training Week",
+                                "placeholder": "e.g., 01/11/2021",
+                                "constraints": {
+                                    "regex": "^(3[01]|[12][0-9]|0[1-9])/(1[0-2]|0[1-9])/[0-9]{4}$",
+                                    "required": true,
+                                    "validationMessage": "This must contain numbers only in the following format dd/mm/yyyy."
+                                },
+                                "toolTip": "Please enter the the training week that the virtual machines are required for e.g., 01/11/2021."
                             },
                             {
                                 "name": "schedule",
@@ -654,8 +699,9 @@
             "vmName": "[steps('vmConfig').vmInstance.vmName]",
             "vmCount": "[steps('vmConfig').vmInstance.vmCount]",
             "vmSize": "[steps('vmConfig').vmInstance.vmSize]",
-            "osDiskType": "[steps('vmConfig').vmInstance.osDiskType]",
-            "osPlatform": "[steps('osConfig').osPlatform]",
+            "osPlatform": "[steps('vmConfig').vmInstance.osPlatform]",
+            "trustedLaunch": "[steps('vmConfig').vmInstance.trustedLaunch]",
+            "osDiskType": "[steps('vmConfig').vmInstance.osDiskType]",            
             "imageCreation": "[steps('osConfig').imageCreation]",
 			"imageBaseOS": "[steps('osConfig').imageBaseOS]",
             "operatingSystem": "[steps('osConfig').operatingSystem]",
@@ -675,6 +721,7 @@
             "localUserPassword": "[steps('userAccountConfig').suacConfig.localUserPassword]",
             "createdBy": "[steps('tags').mngTagsConfig.createdBy]",
             "trainerInitials": "[steps('tags').mngTagsConfig.trainerInitials]",
+            "courseDate": "[steps('tags').mngTagsConfig.courseDate]",
             "schedule": "[steps('tags').mngTagsConfig.schedule]",
             "idleVm": "[steps('tags').mngTagsConfig.idleVm]",
             "resourceGroupCleanup": "[steps('tags').mngTagsConfig.resourceGroupCleanup]"

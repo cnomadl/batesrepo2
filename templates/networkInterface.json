@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "2.0.2.0",
+    "contentVersion": "3.0.0.0",
     "parameters": {
         "vmName": {
             "type": "string"
@@ -15,6 +15,12 @@
             "type": "string"
         },
         "createdBy": {
+            "type": "string"
+        },
+        "operatingSystem": {
+            "type": "string"
+        },
+        "courseDate": {
             "type": "string"
         },
         "resourceGroupCleanup": {
@@ -37,7 +43,8 @@
         "newVnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), parameters('subnetName'))]",
         "vnetNameId": "[concat(parameters('existingVnet'), parameters('subnetName'))]",
         "existingVnetId": "[resourceId('Microsoft.Network/virtualNetworks/', parameters('existingVnet'))]",
-        "existingSubnetId": "[concat(variables('existingVnetId'), '/subnets/', parameters('subnetName'))]"
+        "existingSubnetId": "[concat(variables('existingVnetId'), '/subnets/', parameters('subnetName'))]",
+        "acceleratedNetworking": true
     },
     "resources": [
         {
@@ -49,6 +56,7 @@
                 "Displayname": "Network Interface",
                 "Dept": "[resourceGroup().tags['Dept']]",
                 "Created By": "[parameters('createdBy')]",
+                "Course Date": "[concat('WC-', parameters('courseDate'))]",
                 "Cleanup": "[parameters('resourceGroupCleanup')]"
             },
             "copy": {
@@ -72,6 +80,7 @@
                         }
                     }
                 ],
+                "enableAcceleratedNetworking": "[if(equals(parameters('operatingSystem'), 'WindowsServer'), variables('acceleratedNetworking'), json('null'))]",
                 "networkSecurityGroup": {
                     "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
                 }

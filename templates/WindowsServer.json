@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "2.0.2.0",
+    "contentVersion": "3.0.0.0",
     "parameters": {
         "vmName": {
             "type": "string"
@@ -15,6 +15,9 @@
             "type": "string"
         },
         "createdBy": {
+            "type": "string"
+        },
+        "courseDate": {
             "type": "string"
         },
         "idleVm": {
@@ -35,6 +38,9 @@
         "operatingSystem": {
             "type": "string"
         },
+        "labConfig": {
+            "type": "string"
+        },
         "licenseType": {
             "type": "string"
         },
@@ -46,6 +52,15 @@
         },
         "patchMode": {
             "type": "string"
+        },
+        "securityType": {
+            "type": "string"
+        },
+        "secureBoot": {
+            "type": "bool"
+        },
+        "vTPM": {
+            "type": "bool"
         },
         "adminUsername": {
             "type": "string"
@@ -61,11 +76,6 @@
         "vmNamePrefix": "[toUpper(concat(parameters('vmName'), parameters('trainerInitials')))]",
         "galleryImageName": "SharedImageGallery",
         "windowsLicense": "Windows_Server",
-        "operatingSystemValues": {
-            "WindowsServer": {
-                "galleryImageDefinitionName": "BA-WinServer2016"
-            }
-        },
         "vaultResourceGroup": "BalticTrainerOMS",
         "vaultName": "DeploymentVM",
         "localUserPassword": {
@@ -75,12 +85,51 @@
                 },
                 "secretName": "[parameters('localUsername')]"
             }
-        }, 
-        "_artifactsLocation": "https://raw.githubusercontent.com/balticapprenticeships/azuretemplates",
+        },
+        "operatingSystemValues": {
+            "WindowsServer": {
+                "galleryImageDefinitionName": "BA-WinServer2016"
+            }
+        },
+        "operatingSystemDSC": {
+            "WindowsServer-MD": {
+                "dscArchive": "xBaLabMTAMDServerCfg.zip",
+                "dscScript": "xBaLabMTAMDServerCfg.ps1",
+                "dscFunction": "xBaLabMTAServerMdCfg"
+            },
+            "WindowsServer-SF": {
+                "dscArchive": "xBaLabWindowsCfg.zip",
+                "dscScript": "xBaLabWindowsCfg.ps1",
+                "dscFunction": "xBaLabWinServerCfg"
+            },
+            "WindowsServer-NA": {
+                "dscArchive": "xBaLabWindowsCfg.zip",
+                "dscScript": "xBaLabWindowsCfg.ps1",
+                "dscFunction": "xBaLabWinServerCfg"
+            },
+            "WindowsServer-CITE": {
+                "dscArchive": "xBaLabWindowsCfg.zip",
+                "dscScript": "xBaLabWindowsCfg.ps1",
+                "dscFunction": "xBaLabWinServerCfg"
+            },
+            "WindowsServer-SP": {
+                "dscArchive": "xBaLabWindowsCfg.zip",
+                "dscScript": "xBaLabWindowsCfg.ps1",
+                "dscFunction": "xBaLabWinServerCfg"
+            }
+
+        },
+        "trustedLaunch": {
+            "securityType": "[parameters('securityType')]",
+            "uefiSettings": {
+                "secureBootEnabled": "[parameters('secureBoot')]",
+                "vTpmEnabled": "[parameters('vTPM')]"
+            }
+        },
+        "_artifactsLocation": "https://raw.githubusercontent.com/balticapprenticeships/azuretemplatesv3",
         "_extensionRepo": "main/extensions",
         "dscArchiveFolder": "DSC",
         "dscArchiveFileName": "xBaLabWindowsCfg.zip"
-        
     },
     "resources": [
         {
@@ -92,6 +141,7 @@
                 "Displayname": "Virtual Machine",
                 "Dept": "[resourceGroup().tags['Dept']]",
                 "Created By": "[parameters('createdBy')]",
+                "Course Date": "[concat('WC-', parameters('courseDate'))]",
                 "Schedule": "[if(equals(parameters('schedule'), 'Yes'), 'StartDaily', 'NoSchedule')]",
                 "IdleShutdown": "[parameters('idleVm')]",
                 "Cleanup": "[parameters('resourceGroupCleanup')]"
@@ -138,7 +188,8 @@
                             "patchMode": "[parameters('patchMode')]"
                         }
                     }
-                },                
+                },
+                "securityProfile": "[if(equals(parameters('securityType'), 'TrustedLaunch'), variables('trustedLaunch'), json('null'))]",                
                 "licenseType": "[if(equals(parameters('licenseType'), 'AzureHybrid'), variables('windowsLicense'), json('null'))]",
                 "diagnosticsProfile": {
                     "bootDiagnostics": {
@@ -156,6 +207,7 @@
                         "Displayname": "DSC",
                         "Dept": "[resourceGroup().tags['Dept']]",
                         "Created By": "[parameters('createdBy')]",
+                        "Course Date": "[concat('WC-', parameters('courseDate'))]",
                         "Cleanup": "[parameters('resourceGroupCleanup')]"
                     },
                     "dependsOn": [
@@ -164,14 +216,14 @@
                     "properties": {
                         "publisher": "Microsoft.Powershell",
                         "type": "DSC",
-                        "typeHandlerVersion": "2.9",
+                        "typeHandlerVersion": "2.80",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
                             "wmfVersion": "latest",
                             "configuration": {
-                                "url": "[concat(variables('_artifactsLocation'), '/', variables('_extensionRepo'), '/', variables('dscArchiveFolder'), '/', variables('dscArchiveFileName'))]",
-                                "script": "xBaLabWindowsCfg.ps1",
-                                "function": "xBaLabWinServerCfg"
+                                "url": "[concat(variables('_artifactsLocation'), '/', variables('_extensionRepo'), '/', variables('dscArchiveFolder'), '/', variables('operatingSystemDSC')[parameters('labConfig')].dscArchive)]",
+                                "script": "[variables('operatingSystemDsc')[parameters('labConfig')].dscScript]",
+                                "function": "[variables('operatingSystemDsc')[parameters('labConfig')].dscFunction]"
                             }
                         },
                         "protectedSettings": {
@@ -196,10 +248,6 @@
                     "value": "[resourceId('Microsoft.Compute/virtualMachines', concat(variables('vmNamePrefix'), copyIndex(1)))]"
                 }
             }            
-        },
-        "galleryImage": {
-            "type": "object",
-            "value": "[resourceId('Microsoft.Compute/galleries/images/versions', variables('galleryImageName'), variables('operatingSystemValues')[parameters('operatingSystem')].galleryImageDefinitionName, parameters('imageVersion'))]"
         }
     }
 }

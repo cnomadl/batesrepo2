@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "2.0.2.0",
+    "contentVersion": "3.0.0.0",
     "parameters": {
         "location": {
             "type": "string",
@@ -37,6 +37,12 @@
             "type": "string",
             "metadata": {
                 "description": "Trainer initials used to create a unique resources."
+            }
+        },
+        "courseDate": {
+            "type": "string",
+            "metadata": {
+                "description": ""
             }
         },
         "schedule": {
@@ -104,7 +110,6 @@
         },
         "imageCreation": {
             "type": "string",
-            "defaultValue": "No",
             "allowedValues": [
                 "Yes",
                 "No"
@@ -115,9 +120,8 @@
         },
         "imageBaseOS": {
             "type": "string",
-            "defaultValue": "NoValue",                                       
+            "defaultValue": "WindowsServer",                                       
             "allowedValues": [
-                "NoValue",
                 "WindowsClient",
                 "WindowsServer"
             ],
@@ -131,6 +135,8 @@
             "allowedValues": [
                 "NoValue",
                 "WindowsClient",
+                "WindowsServer-MD",
+                "WindowsServer-SF",
                 "WindowsServer-NA",
                 "WindowsServer-SP",
                 "WindowsServer-CITE",
@@ -145,10 +151,10 @@
         },
         "linuxOS": {
             "type": "string",
-            "defaultValue": "NoValue",
+            "defaultValue": "UbuntuServer",
             "allowedValues": [
-                "NoValue",
                 "UbuntuServer",
+                "UbuntuServer2004",
                 "Debian",
                 "RedHat"
             ],
@@ -190,6 +196,31 @@
                 "description": ""
             }
         },
+        "securityType": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "allowedValues": [
+                "Standard",
+                "TrustedLaunch"
+            ],
+            "metadata": {
+                "description": "TrustedLaunch"
+            }
+        },
+        "SecureBoot": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": ""
+            }
+        },
+        "vTPM": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": ""
+            }
+        },
         "licenseType": {
             "type": "string",
             "defaultValue": "AzureLicense",
@@ -219,12 +250,6 @@
                 "description": ""
             }
         },
-        "adminUsername": {
-            "type": "string",
-            "metadata": {
-                "description": "Admin username for the Virtual Machine."
-            }
-        },
         "authenticationType": {
             "type": "string",
             "defaultValue": "Password",
@@ -235,13 +260,7 @@
             "metadata": {
                 "descriptopn": "The type of authentication used on the virtual machine. SSH is recommended for Linux VMs"
             }
-        },
-        "adminPassword": {
-            "type": "securestring",
-            "metadata": {
-                "description": "Admin password for the Virtual Machine. If Linux SSH is recommended."
-            }
-        },        
+        },       
         "sshPublicKeyString": {
             "type": "securestring",
             "defaultValue": "",
@@ -249,6 +268,18 @@
                 "description": "Admin password for the Virtual Machine. If Linux SSH is recommended."
             }
         },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Admin password for the Virtual Machine. If Linux SSH is recommended."
+            }
+        }, 
         "localUsername": {
             "type": "string",
             "defaultValue": "",
@@ -267,10 +298,8 @@
     "variables": {
         "vmNamePrefix": "[toUpper(concat(parameters('vmName'), parameters('trainerInitials')))]",
         "osImage": "[if(contains(parameters('operatingSystem'), 'WindowsServer'), 'WindowsServer', parameters('operatingSystem'))]",
-        "deployWindowsVM": "[if(equals(parameters('imageCreation'), 'No'), 'Windows', json('null'))]",
-        "vaultResourceGroup": "BalticTrainerOMS",
-        "vaultName": "DeploymentVM", 
-        "_artifactsLocation": "https://raw.githubusercontent.com/balticapprenticeships/azuretemplates",
+        "deployWindowsVM": "[if(equals(parameters('imageCreation'), 'No'), 'Windows', json('null'))]",       
+        "_artifactsLocation": "https://raw.githubusercontent.com/balticapprenticeships/azuretemplatesv3",
         "_templateRepo": "/main/templates"
     },
     "resources": [        
@@ -282,7 +311,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/networkInterface.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "vmName": {
@@ -299,6 +328,12 @@
                     },
                     "createdBy": {
                         "value": "[parameters('createdBy')]"
+                    },
+                    "operatingSystem": {
+                        "value": "[parameters('operatingSystem')]"
+                    },
+                    "courseDate": {
+                        "value": "[parameters('courseDate')]"
                     },
                     "resourceGroupCleanup": {
                         "value": "[parameters('resourceGroupCleanup')]"
@@ -328,7 +363,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/networkSecurityGroup.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "location": {
@@ -336,6 +371,9 @@
                     },
                     "createdBy": {
                         "value": "[parameters('createdBy')]"
+                    },
+                    "courseDate": {
+                        "value": "[parameters('courseDate')]"
                     },
                     "resourceGroupCleanup": {
                         "value": "[parameters('resourceGroupCleanup')]"
@@ -356,7 +394,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/virtualNetwork.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "location": {
@@ -364,6 +402,9 @@
                     },
                     "createdBy": {
                         "value": "[parameters('createdBy')]"
+                    },
+                    "courseDate": {
+                        "value": "[parameters('courseDate')]"
                     },
                     "resourceGroupCleanup": {
                         "value": "[parameters('resourceGroupCleanup')]"
@@ -383,7 +424,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/publicIp.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "vmName": {
@@ -401,6 +442,9 @@
                     "createdBy": {
                         "value": "[parameters('createdBy')]"
                     },
+                    "courseDate": {
+                        "value": "[parameters('courseDate')]"
+                    },
                     "resourceGroupCleanup": {
                         "value": "[parameters('resourceGroupCleanup')]"
                     }
@@ -417,7 +461,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/ImageCreation.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "vmName": {
@@ -465,6 +509,15 @@
                     "patchMode": {
                         "value": "[parameters('patchMode')]"
                     },
+                    "securityType": {
+                        "value": "[parameters('securityType')]"
+                    },
+                    "secureBoot": {
+                        "value": "[parameters('SecureBoot')]"
+                    },
+                    "vTPM": {
+                        "value": "[parameters('vTPM')]"
+                    },
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
                     },
@@ -486,7 +539,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/', variables('osImage'), '.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "vmName": {
@@ -497,6 +550,9 @@
                     },
                     "trainerInitials": {
                         "value": "[parameters('trainerInitials')]"
+                    },
+                    "courseDate": {
+                        "value": "[parameters('courseDate')]"
                     },
                     "location": {
                         "value": "[parameters('location')]"
@@ -522,6 +578,9 @@
                     "operatingSystem": {
                         "value": "[variables('osImage')]"
                     },
+                    "labConfig": {
+                        "value": "[parameters('operatingSystem')]"
+                    },
                     "licenseType": {
                         "value": "[parameters('licenseType')]"
                     },
@@ -533,6 +592,15 @@
                     },
                     "patchMode": {
                         "value": "[parameters('patchMode')]"
+                    },
+                    "securityType": {
+                        "value": "[parameters('securityType')]"
+                    },
+                    "secureBoot": {
+                        "value": "[parameters('SecureBoot')]"
+                    },
+                    "vTPM": {
+                        "value": "[parameters('vTPM')]"
                     },
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
@@ -558,7 +626,7 @@
                 "mode": "Incremental",
                 "templateLink": {
                     "uri": "[concat(variables('_artifactsLocation'), variables('_templateRepo'), '/LinuxServer.json')]",
-                    "contentVersion": "2.0.2.0"
+                    "contentVersion": "3.0.0.0"
                 },
                 "parameters": {
                     "vmName": {
@@ -569,6 +637,9 @@
                     },
                     "trainerInitials": {
                         "value": "[parameters('trainerInitials')]"
+                    },
+                    "courseDate": {
+                        "value": "[parameters('courseDate')]"
                     },
                     "location": {
                         "value": "[parameters('location')]"
@@ -593,6 +664,15 @@
                     },
                     "linuxOS": {
                         "value": "[parameters('linuxOS')]"
+                    },
+                    "securityType": {
+                        "value": "[parameters('securityType')]"
+                    },
+                    "secureBoot": {
+                        "value": "[parameters('SecureBoot')]"
+                    },
+                    "vTPM": {
+                        "value": "[parameters('vTPM')]"
                     },
                     "adminUsername": {
                         "value": "[parameters('adminUsername')]"
@@ -622,6 +702,7 @@
                 "Displayname": "Shutdown Schedule",
                 "Dept": "[resourceGroup().tags['Dept']]",
                 "Created By": "[parameters('createdBy')]",
+                "Course Date": "[concat('WC-', parameters('courseDate'))]",
                 "Cleanup": "[parameters('resourceGroupCleanup')]"
             },
             "copy": {
@@ -648,6 +729,10 @@
         }
     ],
     "outputs": {
+        "contentVersion": {
+            "type": "string",
+            "value": "[deployment().properties.template.contentVersion]"
+        },
         "location": {
             "type": "string",
             "value": "[parameters('location')]"
@@ -708,21 +793,9 @@
             "type": "array",
             "value": "[reference('DeployPublicIPAddress').outputs.fqdn.value]"
         },
-        "adminUsername": {
-            "type": "string",
-            "value": "[parameters('adminUsername')]"
-        },
-        "adminPassword": {
-            "type": "string",
-            "value": "[parameters('adminPassword')]"
-        },
         "localUsername": {
             "type": "string",
             "value": "[parameters('localUsername')]"
-        },
-        "localUserPassword": {
-            "type": "string",
-            "value": "[parameters('localUserPassword')]"
         }
     }
 }
